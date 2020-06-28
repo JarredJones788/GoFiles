@@ -168,7 +168,7 @@ func (router Router) getFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Key provided does not match the private key
-	if data.Key != router.FileKey {
+	if router.FileKey != data.Key {
 		fmt.Println("File key does not match")
 		router.badRequest(w)
 		return
