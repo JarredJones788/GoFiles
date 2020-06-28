@@ -1,94 +1,66 @@
 package main
 
 import (
-	"client"
+	"config"
 	"fmt"
-	"io/ioutil"
-	"types"
+	"os"
+	"router"
 )
+
+func getConfig(mode string) *config.Config {
+	if mode == "development" {
+		return &config.Config{
+			Type: "development",
+			S3Config: config.S3Config{
+				Endpoint: "sfo2.digitaloceanspaces.com",
+				AccessID: "B7DGWCR5E3MOXTQANMRX",
+				Secret:   "pKnaWLIcGvNiRe5hCa9y8dCx6M/dXap96w8fd4nT/1k",
+				UseSSL:   true,
+			},
+			Tokens: config.Tokens{
+				FileKey: "./dev_secrets/file_key.txt",
+			},
+			Host: "Domain",
+			Port: ":2000",
+		}
+	}
+
+	return &config.Config{
+		Type: "production",
+		S3Config: config.S3Config{
+			Endpoint: "sfo2.digitaloceanspaces.com",
+			AccessID: "B7DGWCR5E3MOXTQANMRX",
+			Secret:   "pKnaWLIcGvNiRe5hCa9y8dCx6M/dXap96w8fd4nT/1k",
+			UseSSL:   true,
+		},
+		Tokens: config.Tokens{
+			FileKey: "/run/secrets/file_key",
+		},
+		Host: "Domain",
+		Port: ":2000",
+	}
+}
 
 func main() {
 
-	//Setup config
-	config := &types.Config{
-		Endpoint: "nyc3.digitaloceanspaces.com",
-		AccessID: "B7DGWCR5E3MOXTQANMRX",
-		Secret:   "pKnaWLIcGvNiRe5hCa9y8dCx6M/dXap96w8fd4nT/1k",
-		UseSSL:   true,
+	//Default Dev config
+	configType := "development"
+
+	//Check if production flag is passed.
+	if len(os.Args) > 1 {
+		if os.Args[1] == "-production" {
+			configType = "production"
+		}
 	}
 
-	//Create instance
-	uploadClient := client.FileClient{}
+	//Get correct runtime config
+	config := getConfig(configType)
 
-	//Try and connect to our file store
-	err := uploadClient.Create(config)
-
+	//Start router
+	err := router.Router{}.Init(config)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
-	//--------------DELETE FILE-------------
-
-	// removeConfig := &client.FileRemove{
-	// 	BucketName: "tester788",
-	// 	FileName:   "test2/server.go",
-	// }
-
-	// err = uploadClient.RemoveFile(removeConfig)
-
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// fmt.Println("Removed File")
-
-	//--------------GET FILE----------------
-
-	getConfig := &client.FileGet{
-		BucketName: "tester788",
-		FileName:   "test2/server.go",
-	}
-
-	object, err := uploadClient.GetFile(getConfig)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fileBytes, err := ioutil.ReadAll(object)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(fileBytes)
-
-	//-----------UPLOAD FILE--------------------
-
-	// file, err := os.Open("./server.go")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// defer file.Close()
-
-	// uploadConfig := &client.FileUpload{
-	// 	BucketName: "tester788",
-	// 	FileName:   "test2/server.go",
-	// 	FileType:   "txt",
-	// }
-
-	// err = uploadClient.UploadFile(file, uploadConfig)
-
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// fmt.Println("File Uploaded!")
 
 }
